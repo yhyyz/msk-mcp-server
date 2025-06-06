@@ -11,6 +11,8 @@ name: Upload Python Package
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    # 允许手动触发工作流
 
 permissions:
   contents: read
