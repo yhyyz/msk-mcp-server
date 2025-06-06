@@ -27,7 +27,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "msk-mcp-server=mcp_server_msk_mm2:main",
+            "msk-mcp-server=msk_mm2_mcp_server:main",
         ],
     },
 )
