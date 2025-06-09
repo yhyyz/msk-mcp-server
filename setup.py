@@ -23,6 +23,10 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
+        "boto3>=1.38.31",
+        "botocore>=1.38.31",
+        "mcp>=1.9.3",
+        "fastmcp>=2.7.0"
         # Add your dependencies here
     ],
     entry_points={
