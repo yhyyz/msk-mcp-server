@@ -6,7 +6,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="msk-mcp-server",
-    version="0.1.3",
+    version="0.1.4",
     author="yhyyz",
     author_email="m18311283082@gmail.com",
     description="A Model Context Protocol server for Amazon MSK",
