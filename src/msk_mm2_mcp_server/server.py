@@ -37,7 +37,7 @@ import boto3
 from botocore.exceptions import ClientError, NoCredentialsError, BotoCoreError
 from botocore.config import Config
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 # Configuration Constants
 # These timeouts can be overridden via environment variables for different deployment scenarios
@@ -45,8 +45,13 @@ AWS_READ_TIMEOUT = int(os.getenv('AWS_READ_TIMEOUT', '300'))   # 5 minutes - for
 AWS_CONNECT_TIMEOUT = int(os.getenv('AWS_CONNECT_TIMEOUT', '60'))  # 1 minute - for initial connection
 
 # Initialize the MCP server with descriptive name and dependencies
-mcp = FastMCP("MSK MirrorMaker2 Connector", 
-             dependencies=["boto3", "botocore"])
+name ="""
+This MCP (Model Context Protocol) server provides comprehensive tools to manage AWS MSK Connect 
+connectors, plugins, and worker configurations specifically designed for MirrorMaker2 use cases.
+"""
+mcp_mm2 = FastMCP(name, dependencies=["boto3", "botocore"])
+#from mcp_instance import mcp
+#mcp_mm2 = mcp
 
 def get_aws_config():
     """
@@ -282,7 +287,7 @@ def generate_cluster_auth_config(
 # Resources - Expose read-only data for LLM consumption
 # These resources allow LLMs to discover and inspect existing MSK Connect components
 
-@mcp.resource("msk://connectors")
+@mcp_mm2.resource("msk://connectors")
 def list_all_connectors() -> List[Dict]:
     """
     Resource: List all MSK Connect connectors in the current AWS account/region.
@@ -307,7 +312,7 @@ def list_all_connectors() -> List[Dict]:
     except Exception as e:
         return [{"error": f"Failed to list connectors: {str(e)}"}]
 
-@mcp.resource("msk://connectors/{connector_name}")
+@mcp_mm2.resource("msk://connectors/{connector_name}")
 def get_connector_details(connector_name: str) -> Dict:
     """
     Resource: Get detailed information about a specific MSK Connect connector.
@@ -349,7 +354,7 @@ def get_connector_details(connector_name: str) -> Dict:
     except Exception as e:
         return {"error": f"Failed to get connector details: {str(e)}"}
 
-@mcp.resource("msk://plugins")
+@mcp_mm2.resource("msk://plugins")
 def list_all_plugins() -> List[Dict]:
     """
     Resource: List all MSK Connect custom plugins.
@@ -374,7 +379,7 @@ def list_all_plugins() -> List[Dict]:
     except Exception as e:
         return [{"error": f"Failed to list plugins: {str(e)}"}]
 
-@mcp.resource("msk://worker-configs")
+@mcp_mm2.resource("msk://worker-configs")
 def list_all_worker_configs() -> List[Dict]:
     """
     Resource: List all MSK Connect worker configurations.
@@ -399,7 +404,7 @@ def list_all_worker_configs() -> List[Dict]:
     except Exception as e:
         return {"error": f"Failed to list worker configurations: {str(e)}"}
 
-@mcp.resource("msk://connector-status/{connector_name}")
+@mcp_mm2.resource("msk://connector-status/{connector_name}")
 def get_connector_status(connector_name: str) -> Dict:
     """
     Resource: Get quick status information for a specific connector.
@@ -434,7 +439,7 @@ def get_connector_status(connector_name: str) -> Dict:
     except Exception as e:
         return {"error": f"Failed to get connector status: {str(e)}"}
 
-@mcp.prompt()
+@mcp_mm2.prompt()
 def setup_complete_mm2_replication(
     source_cluster_name: str,
     target_cluster_name: str
@@ -509,7 +514,7 @@ Please provide the specific cluster information, and I will help you create the 
 - Ensure proper IAM permissions are in place for cross-cluster access
 """
 
-@mcp.prompt()
+@mcp_mm2.prompt()
 def troubleshoot_connector(connector_name: str) -> str:
     """
     Prompt: Comprehensive troubleshooting guide for MSK Connect connectors.
@@ -582,7 +587,7 @@ Use these tools to gather detailed information:
 - Test authentication separately using Kafka client tools
 """
 
-@mcp.prompt()
+@mcp_mm2.prompt()
 def optimize_mm2_performance(replication_scale: str) -> str:
     """
     Prompt: Performance optimization recommendations for MirrorMaker2 deployments.
@@ -684,7 +689,7 @@ refresh.topics.interval.seconds: 300
 # Core Tools - Primary operations for managing MSK Connect resources
 # These tools provide the main functionality for creating and managing MirrorMaker2 components
 
-@mcp.tool()
+@mcp_mm2.tool()
 def create_empty_plugin_zip(bucket_name: str, key_path: str = "mm2/mm2.zip") -> str:
     """
     Tool: Create an empty ZIP file and upload it to S3 for MSK Connect plugin use.
@@ -748,7 +753,7 @@ def create_empty_plugin_zip(bucket_name: str, key_path: str = "mm2/mm2.zip") -> 
     except Exception as e:
         return f"Failed to create ZIP file: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def create_custom_plugin(
     plugin_name: str,
     s3_bucket: str,
@@ -828,7 +833,7 @@ def create_custom_plugin(
     except Exception as e:
         return f"Plugin creation failed: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def check_plugin_status(plugin_arn: str) -> str:
     """
     Tool: Check the current status of an MSK Connect custom plugin.
@@ -895,7 +900,7 @@ def check_plugin_status(plugin_arn: str) -> str:
     except Exception as e:
         return f"Failed to check plugin status: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def wait_for_plugin_ready(plugin_arn: str, max_wait_minutes: int = 10) -> str:
     """
     Tool: Wait for plugin to reach ACTIVE state with automatic status polling.
@@ -955,7 +960,7 @@ def wait_for_plugin_ready(plugin_arn: str, max_wait_minutes: int = 10) -> str:
     except Exception as e:
         return f"Failed to wait for plugin status: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def create_worker_configuration(
     worker_config_name: str,
     properties: Dict[str, str],
@@ -1033,7 +1038,7 @@ def create_worker_configuration(
 
 # Connector Creation Functions
 
-@mcp.tool()
+@mcp_mm2.tool()
 def create_mirror_heartbeat_connector(
     connector_name: str,
     source_bootstrap_servers: str,
@@ -1042,8 +1047,9 @@ def create_mirror_heartbeat_connector(
     service_execution_role_arn: str,
     vpc_subnets: List[str],
     vpc_security_groups: List[str],
-    source_auth_type: str = "iam",
-    target_auth_type: str = "iam",
+    s3_bucket: str ,
+    source_auth_type: str = "plaintext",
+    target_auth_type: str = "plaintext",
     source_role_arn: Optional[str] = None,
     target_role_arn: Optional[str] = None,
     source_username: Optional[str] = None,
@@ -1052,7 +1058,7 @@ def create_mirror_heartbeat_connector(
     target_password: Optional[str] = None,
     replication_factor: int = 3,
     tasks_max: int = 1,
-    kafka_connect_version: str = "2.7.1",
+    kafka_connect_version: str = "3.7.x",
     worker_config_arn: Optional[str] = None
 ) -> str:
     """
@@ -1076,6 +1082,7 @@ def create_mirror_heartbeat_connector(
         service_execution_role_arn (str): IAM role ARN for MSK Connect service
         vpc_subnets (List[str]): List of VPC subnet IDs for connector deployment
         vpc_security_groups (List[str]): List of security group IDs for network access
+        s3_bucket (str): S3 bucket for connector logs
         source_auth_type (str): Authentication type for source cluster (iam/plaintext/scram)
         target_auth_type (str): Authentication type for target cluster (iam/plaintext/scram)
         source_role_arn (Optional[str]): IAM role ARN for source cluster (if using IAM auth)
@@ -1086,7 +1093,7 @@ def create_mirror_heartbeat_connector(
         target_password (Optional[str]): Password for target cluster (if using SCRAM auth)
         replication_factor (int): Replication factor for heartbeat topics (default: 3)
         tasks_max (int): Maximum number of tasks for the connector (default: 1)
-        kafka_connect_version (str): Kafka Connect version to use (default: "2.7.1")
+        kafka_connect_version (str): Kafka Connect version to use (default: "3.7.x")
         worker_config_arn (Optional[str]): ARN of worker configuration (optional)
     
     Returns:
@@ -1181,10 +1188,17 @@ def create_mirror_heartbeat_connector(
                 }
             },
             "kafkaClusterClientAuthentication": {
-                "authenticationType": "IAM"
+                "authenticationType": "NONE"
             },
             "kafkaClusterEncryptionInTransit": {
-                "encryptionType": "TLS"
+                "encryptionType": "PLAINTEXT"
+            },
+            "workerLogDelivery": {
+                "s3": {
+                    "bucket": s3_bucket,
+                    "enabled": True,
+                    "prefix": "msk-mm2-heartbeat-logs"
+                }
             },
             "plugins": [
                 {
@@ -1214,7 +1228,7 @@ def create_mirror_heartbeat_connector(
     except Exception as e:
         return f"MirrorHeartbeatConnector creation failed: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def create_mirror_checkpoint_connector(
     connector_name: str,
     source_bootstrap_servers: str,
@@ -1223,8 +1237,9 @@ def create_mirror_checkpoint_connector(
     service_execution_role_arn: str,
     vpc_subnets: List[str],
     vpc_security_groups: List[str],
-    source_auth_type: str = "iam",
-    target_auth_type: str = "iam",
+    s3_bucket: str ,
+    source_auth_type: str = "plaintext",
+    target_auth_type: str = "plaintext",
     source_role_arn: Optional[str] = None,
     target_role_arn: Optional[str] = None,
     source_username: Optional[str] = None,
@@ -1233,7 +1248,7 @@ def create_mirror_checkpoint_connector(
     target_password: Optional[str] = None,
     replication_factor: int = 3,
     tasks_max: int = 1,
-    kafka_connect_version: str = "2.7.1",
+    kafka_connect_version: str = "3.7.x",
     worker_config_arn: Optional[str] = None
 ) -> str:
     """
@@ -1258,6 +1273,7 @@ def create_mirror_checkpoint_connector(
         service_execution_role_arn (str): IAM role ARN for MSK Connect service
         vpc_subnets (List[str]): List of VPC subnet IDs for connector deployment
         vpc_security_groups (List[str]): List of security group IDs for network access
+        s3_bucket (str): S3 bucket for connector logs
         source_auth_type (str): Authentication type for source cluster (iam/plaintext/scram)
         target_auth_type (str): Authentication type for target cluster (iam/plaintext/scram)
         source_role_arn (Optional[str]): IAM role ARN for source cluster (if using IAM auth)
@@ -1268,7 +1284,7 @@ def create_mirror_checkpoint_connector(
         target_password (Optional[str]): Password for target cluster (if using SCRAM auth)
         replication_factor (int): Replication factor for checkpoint topics (default: 3)
         tasks_max (int): Maximum number of tasks for the connector (default: 1)
-        kafka_connect_version (str): Kafka Connect version to use (default: "2.7.1")
+        kafka_connect_version (str): Kafka Connect version to use (default: "3.7.x")
         worker_config_arn (Optional[str]): ARN of worker configuration (optional)
     
     Returns:
@@ -1365,10 +1381,17 @@ def create_mirror_checkpoint_connector(
                 }
             },
             "kafkaClusterClientAuthentication": {
-                "authenticationType": "IAM"
+                "authenticationType": "NONE"
             },
             "kafkaClusterEncryptionInTransit": {
-                "encryptionType": "TLS"
+                "encryptionType": "PLAINTEXT"
+            },
+            "workerLogDelivery": {
+                "s3": {
+                    "bucket": s3_bucket,
+                    "enabled": True,
+                    "prefix": "msk-mm2-checkpoint-logs"
+                }
             },
             "plugins": [
                 {
@@ -1398,7 +1421,7 @@ def create_mirror_checkpoint_connector(
     except Exception as e:
         return f"MirrorCheckpointConnector creation failed: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def create_mirror_source_connector(
     connector_name: str,
     source_bootstrap_servers: str,
@@ -1407,8 +1430,9 @@ def create_mirror_source_connector(
     service_execution_role_arn: str,
     vpc_subnets: List[str],
     vpc_security_groups: List[str],
-    source_auth_type: str = "iam",
-    target_auth_type: str = "iam",
+    s3_bucket: str ,
+    source_auth_type: str = "plaintext",
+    target_auth_type: str = "plaintext",
     source_role_arn: Optional[str] = None,
     target_role_arn: Optional[str] = None,
     source_username: Optional[str] = None,
@@ -1442,6 +1466,7 @@ def create_mirror_source_connector(
         service_execution_role_arn (str): IAM role ARN for MSK Connect service
         vpc_subnets (List[str]): List of VPC subnet IDs for connector deployment
         vpc_security_groups (List[str]): List of security group IDs for network access
+        s3_bucket (str): S3 bucket for connector logs
         source_auth_type (str): Authentication type for source cluster (iam/plaintext/scram)
         target_auth_type (str): Authentication type for target cluster (iam/plaintext/scram)
         source_role_arn (Optional[str]): IAM role ARN for source cluster (if using IAM auth)
@@ -1554,10 +1579,17 @@ def create_mirror_source_connector(
                 }
             },
             "kafkaClusterClientAuthentication": {
-                "authenticationType": "IAM"
+                "authenticationType": "NONE"
             },
             "kafkaClusterEncryptionInTransit": {
-                "encryptionType": "TLS"
+                "encryptionType": "PLAINTEXT"
+            },
+            "workerLogDelivery": {
+                "s3": {
+                    "bucket": s3_bucket,
+                    "enabled": True,
+                    "prefix": "msk-mm2-source-logs"
+                }
             },
             "plugins": [
                 {
@@ -1589,7 +1621,7 @@ def create_mirror_source_connector(
 
 # Management and Monitoring Functions
 
-@mcp.tool()
+@mcp_mm2.tool()
 def check_connector_status(connector_arn: str) -> str:
     """
     Tool: Check the current status of an MSK Connect connector.
@@ -1662,7 +1694,7 @@ def check_connector_status(connector_arn: str) -> str:
     except Exception as e:
         return f"Failed to check connector status: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def wait_for_connector_ready(connector_arn: str, max_wait_minutes: int = 15) -> str:
     """
     Tool: Wait for connector to reach RUNNING state with automatic polling.
@@ -1723,7 +1755,7 @@ def wait_for_connector_ready(connector_arn: str, max_wait_minutes: int = 15) -> 
     except Exception as e:
         return f"Failed to wait for connector status: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def list_connectors() -> str:
     """
     List all MSK Connect connectors
@@ -1755,7 +1787,7 @@ def list_connectors() -> str:
     except Exception as e:
         return f"Failed to list connectors: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def describe_connector(connector_arn: str) -> str:
     """
     Describe a specific MSK Connect connector
@@ -1800,7 +1832,7 @@ def describe_connector(connector_arn: str) -> str:
     except Exception as e:
         return f"Failed to describe connector: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def list_custom_plugins() -> str:
     """
     List all MSK Connect custom plugins
@@ -1832,7 +1864,7 @@ def list_custom_plugins() -> str:
     except Exception as e:
         return f"Failed to list plugins: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def describe_custom_plugin(plugin_arn: str) -> str:
     """
     Describe a specific MSK Connect custom plugin
@@ -1872,7 +1904,7 @@ def describe_custom_plugin(plugin_arn: str) -> str:
     except Exception as e:
         return f"Failed to describe plugin: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def list_worker_configurations() -> str:
     """
     List all MSK Connect worker configurations
@@ -1904,7 +1936,7 @@ def list_worker_configurations() -> str:
     except Exception as e:
         return f"Failed to list worker configurations: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def describe_worker_configuration(worker_config_arn: str) -> str:
     """
     Describe a specific MSK Connect worker configuration
@@ -1942,7 +1974,7 @@ def describe_worker_configuration(worker_config_arn: str) -> str:
     except Exception as e:
         return f"Failed to describe worker configuration: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def update_connector(
     connector_arn: str,
     connector_configuration: Dict[str, str],
@@ -1994,7 +2026,7 @@ def update_connector(
     except Exception as e:
         return f"Failed to update connector: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def delete_connector(connector_arn: str, current_version: str) -> str:
     """
     Delete MSK Connect connector
@@ -2027,7 +2059,7 @@ def delete_connector(connector_arn: str, current_version: str) -> str:
     except Exception as e:
         return f"Failed to delete connector: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def delete_custom_plugin(plugin_arn: str) -> str:
     """
     Delete MSK Connect custom plugin
@@ -2052,7 +2084,7 @@ def delete_custom_plugin(plugin_arn: str) -> str:
     except Exception as e:
         return f"Failed to delete plugin: {str(e)}"
 
-@mcp.tool()
+@mcp_mm2.tool()
 def delete_worker_configuration(worker_config_arn: str) -> str:
     """
     Delete MSK Connect worker configuration
@@ -2078,7 +2110,7 @@ def delete_worker_configuration(worker_config_arn: str) -> str:
         return f"Failed to delete worker configuration: {str(e)}"
 
 # High-level orchestration function
-@mcp.tool()
+@mcp_mm2.tool()
 def create_complete_mm2_setup(
     plugin_name: str,
     s3_bucket: str,
@@ -2088,8 +2120,8 @@ def create_complete_mm2_setup(
     service_execution_role_arn: str,
     vpc_subnets: List[str],
     vpc_security_groups: List[str],
-    source_auth_type: str = "iam",
-    target_auth_type: str = "iam",
+    source_auth_type: str = "plaintext",
+    target_auth_type: str = "plaintext",
     source_role_arn: Optional[str] = None,
     target_role_arn: Optional[str] = None
 ) -> str:

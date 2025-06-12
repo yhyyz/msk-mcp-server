@@ -33,8 +33,8 @@ class TestMCPServer(unittest.TestCase):
         """Test that the MCP object exists."""
         # Only import if the package is available
         if importlib.util.find_spec("msk_mm2_mcp_server"):
-            from msk_mm2_mcp_server import mcp
-            self.assertIsNotNone(mcp, "MCP object should exist")
+            from msk_mm2_mcp_server import mcp_mm2
+            self.assertIsNotNone(mcp_mm2, "MCP object should exist")
 
 
 if __name__ == "__main__":

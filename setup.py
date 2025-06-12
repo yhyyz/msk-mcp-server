@@ -6,7 +6,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="msk-mcp-server",
-    version="0.1.2",
+    version="0.1.3",
     author="yhyyz",
     author_email="m18311283082@gmail.com",
     description="A Model Context Protocol server for Amazon MSK",
@@ -31,7 +31,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "msk-mcp-server=msk_mm2_mcp_server:main",
+            "msk-mcp-server=main:main",
         ],
     },
 )

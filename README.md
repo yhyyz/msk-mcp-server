@@ -1,13 +1,24 @@
-# MSK MirrorMaker2 MCP Server
+# MSK MCP Server
 
-A Model Context Protocol server that provides comprehensive management capabilities for Amazon MSK (Managed Streaming for Apache Kafka) MirrorMaker2 connectors. This server enables LLMs to create, configure, and manage complete MirrorMaker2 replication pipelines across MSK clusters.
+A comprehensive Model Context Protocol server that provides management capabilities for Amazon MSK (Managed Streaming for Apache Kafka) including MirrorMaker2 connectors, custom domain creation, and disaster recovery operations. This server enables LLMs to create, configure, and manage complete MSK infrastructure with advanced DNS management and DR switching capabilities.
 
 > [!CAUTION]
-> This server requires AWS credentials with permissions to access MSK Connect, S3, and related AWS services. Exercise caution when using this MCP server to ensure proper AWS security practices.
+> This server requires AWS credentials with permissions to access MSK Connect, S3, Route53, and related AWS services. Exercise caution when using this MCP server to ensure proper AWS security practices.
 
-The server provides tools for orchestrating complete MirrorMaker2 setups, including custom plugin creation, connector configuration, and status monitoring. It supports multiple authentication methods (IAM, PLAINTEXT, SCRAM-SHA-512) and handles long-running operations with proper timeouts and retries.
+The server provides two main modules:
+1. **MirrorMaker2 Module (mm2)** - Complete MM2 pipeline orchestration with custom plugin creation, connector configuration, and status monitoring
+2. **Custom Domain Module (dr)** - MSK custom domain creation with Route53 integration and disaster recovery switching capabilities
+
+Both modules support multiple authentication methods (IAM, PLAINTEXT, SCRAM-SHA-512) and handle long-running operations with proper timeouts and retries.
 
 ## Features
+
+### MSK Custom Domain & Disaster Recovery (dr module)
+- **Custom Domain Creation** - Creates custom DNS domains for MSK clusters using Route53
+- **Disaster Recovery Switching** - Automated DR failover between primary and secondary MSK clusters
+- **Route53 Integration** - Manages DNS records and VPC associations for seamless switching
+- **Cluster Information** - Retrieves detailed MSK cluster and broker information
+- **VPC Management** - Automatic VPC discovery and association for cross-region deployments
 
 ### Core MirrorMaker2 Management
 - **Complete MM2 Pipeline Setup** - Orchestrates full MirrorMaker2 replication setup with three connector types (Heartbeat, Checkpoint, Source)
@@ -16,6 +27,15 @@ The server provides tools for orchestrating complete MirrorMaker2 setups, includ
 - **Status Monitoring** - Real-time monitoring of connector and plugin states with automated waiting functions
 
 ### Available Tools
+
+#### MSK Custom Domain & Disaster Recovery
+- `get_msk_cluster_info` - Retrieves detailed information about an MSK cluster
+- `get_msk_broker_info` - Gets broker information and bootstrap addresses for MSK clusters
+- `get_vpc_for_msk_cluster` - Discovers VPC information for MSK cluster networking
+- `get_route53_hosted_zone_info` - Retrieves Route53 hosted zone details
+- `create_msk_custom_domain` - Creates custom DNS domains for MSK clusters with Route53 integration
+- `list_route53_resource_record_sets` - Lists all DNS records in a Route53 hosted zone
+- `perform_dr_switch` - Performs disaster recovery switching between primary and DR clusters
 
 #### Plugin Management
 - `create_empty_plugin_zip` - Creates an empty MirrorMaker2 plugin ZIP file and uploads to S3
@@ -43,13 +63,19 @@ The server provides tools for orchestrating complete MirrorMaker2 setups, includ
 - `describe_connector` - Detailed connector information
 
 ### Available Resources
+- `msk://clusters` - Lists all MSK clusters with detailed information  
+- `msk://clusters/{cluster_name}` - Detailed information about specific MSK clusters
+- `msk://route53/zones` - Lists all Route53 hosted zones
+- `msk://route53/zones/{zone_name}/records` - DNS records for specific hosted zones
 - `msk://connectors` - Lists all MSK Connect connectors
-- `msk://connectors/{connector_name}` - Detailed information about specific connectors
 - `msk://plugins` - Lists all custom plugins
 - `msk://worker-configs` - Lists all worker configurations
 - `msk://connector-status/{connector_name}` - Real-time connector status information
 
 ### Available Prompts
+- **setup_msk_custom_domain** - Guidance for creating custom domains for MSK clusters with Route53
+- **configure_msk_disaster_recovery** - Step-by-step DR setup between primary and secondary clusters
+- **perform_msk_dr_failover** - Instructions for executing disaster recovery failover operations
 - **setup_complete_mm2_replication** - Guidance for setting up complete MirrorMaker2 replication between clusters
 - **troubleshoot_connector** - Troubleshooting guidance for connector issues
 - **optimize_mm2_performance** - Performance optimization recommendations for different scales
@@ -71,9 +97,13 @@ The server provides tools for orchestrating complete MirrorMaker2 setups, includ
          "Effect": "Allow",
          "Action": [
            "kafkaconnect:*",
+           "kafka:*",
            "s3:GetObject",
            "s3:PutObject",
-           "s3:ListBucket"
+           "s3:ListBucket",
+           "route53:*",
+           "ec2:DescribeSubnets",
+           "ec2:DescribeVpcs"
          ],
          "Resource": "*"
        }
@@ -85,7 +115,12 @@ The server provides tools for orchestrating complete MirrorMaker2 setups, includ
    - S3 bucket for storing MirrorMaker2 plugin files
    - Proper IAM permissions for MSK Connect to access the bucket
 
-4. **Network Configuration**
+4. **Route53 Hosted Zone** *(for custom domain functionality)*
+   - Route53 hosted zone for custom domain creation
+   - Proper IAM permissions for Route53 record management
+   - VPC associations configured for private hosted zones
+
+5. **Network Configuration**
    - VPC subnets accessible to both source and target MSK clusters
    - Security groups allowing MSK Connect to communicate with clusters
 
@@ -227,6 +262,51 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 
 ## Usage Examples
 
+### MSK Custom Domain Creation
+Create custom DNS domains for your MSK clusters:
+
+```json
+{
+  "tool": "create_msk_custom_domain",
+  "arguments": {
+    "region": "us-east-1",
+    "cluster_name": "my-msk-cluster", 
+    "zone_name": "kafka.example.com.",
+    "vpc_id": "vpc-12345678"
+  }
+}
+```
+
+### Disaster Recovery Switching
+Perform DR failover between primary and secondary clusters:
+
+```json
+{
+  "tool": "perform_dr_switch",
+  "arguments": {
+    "primary_region": "us-east-1",
+    "primary_cluster_name": "primary-cluster",
+    "dr_region": "us-west-2", 
+    "dr_cluster_name": "dr-cluster",
+    "zone_name": "kafka.example.com.",
+    "activate_dr": true
+  }
+}
+```
+
+### Get MSK Cluster Information
+Retrieve detailed cluster and broker information:
+
+```json
+{
+  "tool": "get_msk_cluster_info",
+  "arguments": {
+    "region": "us-east-1",
+    "cluster_name": "my-msk-cluster"
+  }
+}
+```
+
 ### Complete MirrorMaker2 Setup
 The server provides a high-level orchestration tool for complete setup:
 
@@ -303,7 +383,18 @@ npx @modelcontextprotocol/inspector python -m mcp_server_msk_mm2
 
 ## Architecture
 
-The server is built with:
+The server is built with a modular architecture:
+
+**Core Framework:**
+- **FastMCP Framework** - Modern MCP server implementation with dependency management
+- **Modular Design** - Separate modules for different MSK management capabilities
+- **Unified Interface** - Single server instance with mounted submodules
+
+**Module Structure:**
+- **mm2 Module** - Complete MirrorMaker2 connector management
+- **dr Module** - Custom domain creation and disaster recovery operations
+
+**Technical Features:**
 - **Sync Operations** - All operations are synchronous for better reliability
 - **Comprehensive Error Handling** - Detailed error messages with AWS error codes
 - **Status Monitoring** - Built-in polling for long-running operations
