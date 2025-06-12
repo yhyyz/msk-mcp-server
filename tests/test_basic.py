@@ -19,11 +19,11 @@ class TestPackageImport(unittest.TestCase):
     def test_version(self):
         """Test that the package has a version."""
         # Only import if the package is available
-        if importlib.util.find_spec("msk_mm2_mcp_server"):
-            import msk_mm2_mcp_server
-            self.assertTrue(hasattr(msk_mm2_mcp_server, "__version__"))
-            self.assertIsInstance(msk_mm2_mcp_server.__version__, str)
-            self.assertTrue(len(msk_mm2_mcp_server.__version__) > 0)
+        if importlib.util.find_spec("main"):
+            import main
+            self.assertTrue(hasattr(main, "__version__"))
+            self.assertIsInstance(main.__version__, str)
+            self.assertTrue(len(main.__version__) > 0)
 
 
 class TestMCPServer(unittest.TestCase):
@@ -33,7 +33,7 @@ class TestMCPServer(unittest.TestCase):
         """Test that the MCP object exists."""
         # Only import if the package is available
         if importlib.util.find_spec("msk_mm2_mcp_server"):
-            from msk_mm2_mcp_server import mcp_mm2
+            from msk_mm2_mcp_server.server import mcp_mm2
             self.assertIsNotNone(mcp_mm2, "MCP object should exist")
 
 
