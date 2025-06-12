@@ -21,9 +21,9 @@ class TestPackageImport(unittest.TestCase):
         # Only import if the package is available
         if importlib.util.find_spec("main"):
             import main
-            self.assertTrue(hasattr(main, "__version__"))
-            self.assertIsInstance(main.__version__, str)
-            self.assertTrue(len(main.__version__) > 0)
+            self.assertTrue(hasattr(main, "__author__"))
+            self.assertIsInstance(main.__author__, str)
+            self.assertTrue(len(main.__author__) > 0)
 
 
 class TestMCPServer(unittest.TestCase):

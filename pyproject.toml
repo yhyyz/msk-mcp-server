@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=62", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "msk-mcp-server"
-version = "0.1.4"
+version = "0.1.5"
 description = "A Model Context Protocol server for Amazon MSK"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -20,7 +20,15 @@ dependencies = [
 ]
 
 [project.scripts]
-msk-mcp-server = "src.main:main"
+msk-mcp-server = "main:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["msk_custom_domain*", "msk_mm2_mcp_server*"]
 
 [tool.black]
 line-length = 88

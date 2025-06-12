@@ -2,7 +2,6 @@ from msk_custom_domain.server import mcp_custom_domain
 from msk_mm2_mcp_server.server import mcp_mm2
 # from mcp_instance import mcp
 
-__version__ = "0.1.0"
 __author__ = "yhyyz"
 __email__ = "m18311283082@gmail.com"
 
