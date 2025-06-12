@@ -31,7 +31,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "msk-mcp-server=main:main",
+            "msk-mcp-server=src.main:main",
         ],
     },
 )
