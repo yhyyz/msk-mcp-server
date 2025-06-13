@@ -9,7 +9,7 @@ The server provides two main modules:
 1. **MirrorMaker2 Module (mm2)** - Complete MM2 pipeline orchestration with custom plugin creation, connector configuration, and status monitoring
 2. **Custom Domain Module (dr)** - MSK custom domain creation with Route53 integration and disaster recovery switching capabilities
 
-Both modules support multiple authentication methods (IAM, PLAINTEXT, SCRAM-SHA-512) and handle long-running operations with proper timeouts and retries.
+Custom Domain Module only support PLAINTEXT, MSK MM2 support multiple authentication methods (IAM, PLAINTEXT, SCRAM-SHA-512) and handle long-running operations with proper timeouts and retries.
 
 ## Features
 
