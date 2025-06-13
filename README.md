@@ -20,6 +20,8 @@ Both modules support multiple authentication methods (IAM, PLAINTEXT, SCRAM-SHA-
 - **Cluster Information** - Retrieves detailed MSK cluster and broker information
 - **VPC Management** - Automatic VPC discovery and association for cross-region deployments
 
+![msk-dr](https://pcmyp.oss-cn-beijing.aliyuncs.com/markdown/msk-rout53.jpg)
+
 ### Core MirrorMaker2 Management
 - **Complete MM2 Pipeline Setup** - Orchestrates full MirrorMaker2 replication setup with three connector types (Heartbeat, Checkpoint, Source)
 - **Custom Plugin Management** - Creates and manages MSK Connect custom plugins with automatic S3 integration
